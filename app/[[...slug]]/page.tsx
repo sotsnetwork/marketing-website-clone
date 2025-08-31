@@ -31,19 +31,25 @@ export const dynamic = "force-static";
 export const revalidate = 30;
 
 export const generateStaticParams = async () => {
-  const data = await basehub().query({
-    site: {
-      pages: {
-        items: {
-          pathname: true,
+  try {
+    const data = await basehub().query({
+      site: {
+        pages: {
+          items: {
+            pathname: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  return data.site.pages.items.map((item) => ({
-    slug: item.pathname.split("/").filter(Boolean),
-  }));
+    return data.site.pages.items.map((item) => ({
+      slug: item.pathname.split("/").filter(Boolean),
+    }));
+  } catch (error) {
+    console.error("Error in generateStaticParams:", error);
+    // Return empty array as fallback to prevent build failure
+    return [];
+  }
 };
 
 export const generateMetadata = async ({
@@ -51,15 +57,17 @@ export const generateMetadata = async ({
 }: {
   params: Promise<{ slug?: string[] }>;
 }): Promise<Metadata | undefined> => {
-  const params = await _params;
-  const data = await basehub().query({
-    site: {
-      settings: { metadata: { defaultTitle: true, titleTemplate: true, defaultDescription: true } },
-      pages: {
-        __args: {
-          filter: {
-            pathname: {
-              eq: params.slug ? `/${params.slug.join("/")}` : "/",
+  try {
+    const params = await _params;
+    const data = await basehub().query({
+      site: {
+        settings: { metadata: { defaultTitle: true, titleTemplate: true, defaultDescription: true } },
+        pages: {
+          __args: {
+            filter: {
+              pathname: {
+                eq: params.slug ? `/${params.slug.join("/")}` : "/",
+              },
             },
           },
         },
@@ -70,20 +78,27 @@ export const generateMetadata = async ({
           },
         },
       },
-    },
-  });
+    });
 
-  const page = data.site.pages.items.at(0);
+    const page = data.site.pages.items.at(0);
 
-  if (!page) {
-    return notFound();
+    if (!page) {
+      return notFound();
+    }
+
+    return {
+      title: page.metadataOverrides.title ?? data.site.settings.metadata.defaultTitle,
+      description:
+        page.metadataOverrides.description ?? data.site.settings.metadata.defaultDescription,
+    };
+  } catch (error) {
+    console.error("Error in generateMetadata:", error);
+    // Return default metadata as fallback
+    return {
+      title: "Marketing Website",
+      description: "A modern marketing website built with Next.js and Basehub",
+    };
   }
-
-  return {
-    title: page.metadataOverrides.title ?? data.site.settings.metadata.defaultTitle,
-    description:
-      page.metadataOverrides.description ?? data.site.settings.metadata.defaultDescription,
-  };
 };
 
 function SectionsUnion({
@@ -123,7 +138,7 @@ function SectionsUnion({
         return <Pricing {...comp} key={comp._id} />;
       case "FaqComponent":
         return <Faq {...comp} key={comp._id} />;
-      case "FaqComponent":
+      case "AccordionFaqComponent":
         return <AccordionFaq {...comp} key={comp._id} eventsKey={eventsKey} />;
       case "PricingTableComponent":
         return <PricingTable {...comp} key={comp._id} />;
@@ -170,19 +185,21 @@ export default async function DynamicPage({
 }: {
   params: Promise<{ slug?: string[] }>;
 }) {
-  const params = await _params;
-  const slugs = params.slug;
+  try {
+    const params = await _params;
+    const slugs = params.slug;
 
-  const {
-    site: { pages, generalEvents, settings },
-  } = await basehub().query({
-    site: {
-      settings: { ...settingsLogoLiteFragment },
-      pages: {
-        __args: {
-          filter: {
-            pathname: {
-              eq: slugs ? `/${slugs.join("/")}` : "/",
+    const {
+      site: { pages, generalEvents, settings },
+    } = await basehub().query({
+      site: {
+        settings: { ...settingsLogoLiteFragment },
+        pages: {
+          __args: {
+            filter: {
+              pathname: {
+                eq: slugs ? `/${slugs.join("/")}` : "/",
+              },
             },
           },
           first: 1,
@@ -197,19 +214,30 @@ export default async function DynamicPage({
       generalEvents: {
         ingestKey: true,
       },
-    },
-  });
+    });
 
-  const page = pages.items[0];
+    const page = pages.items[0];
 
-  if (!page) notFound();
+    if (!page) notFound();
 
-  const sections = page.sections;
+    const sections = page.sections;
 
-  return (
-    <>
-      <PageView ingestKey={generalEvents.ingestKey} />
-      <SectionsUnion sections={sections} eventsKey={generalEvents.ingestKey} settings={settings} />
-    </>
-  );
+    return (
+      <>
+        <PageView ingestKey={generalEvents.ingestKey} />
+        <SectionsUnion sections={sections} eventsKey={generalEvents.ingestKey} settings={settings} />
+      </>
+    );
+  } catch (error) {
+    console.error("Error in DynamicPage:", error);
+    // Return a simple error page as fallback
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h1>
+          <p className="text-gray-600">Please try refreshing the page or check your connection.</p>
+        </div>
+      </div>
+    );
+  }
 }
