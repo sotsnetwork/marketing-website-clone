@@ -23,6 +23,7 @@ export function DarkLightImage({
     <>
       {dark ? (
         <BaseHubImage
+          key={`dark-${dark._id || 'fallback'}`}
           alt={dark.alt ?? alt ?? ""}
           className={clsx("hidden dark:block", className)}
           height={height ?? dark.height}
@@ -38,6 +39,7 @@ export function DarkLightImage({
         />
       ) : null}
       <BaseHubImage
+        key={`light-${light._id || 'fallback'}`}
         alt={light.alt ?? alt ?? ""}
         className={clsx(dark && "dark:hidden", className)}
         height={height ?? light.height}
