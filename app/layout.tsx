@@ -131,6 +131,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html suppressHydrationWarning lang="en">
       <body
         className={`min-h-svh max-w-[100vw] bg-[--surface-primary] text-[--text-primary] dark:bg-[--dark-surface-primary] dark:text-[--dark-text-primary] ${geistMono.variable} ${geist.variable} font-sans`}
+        suppressHydrationWarning
       >
         <Providers theme={settings.theme}>
           {!isMainV0 && <Toolbar />}
