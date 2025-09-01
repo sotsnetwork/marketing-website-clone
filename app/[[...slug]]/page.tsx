@@ -209,9 +209,9 @@ export default async function DynamicPage({
             sections: sectionsFragment.sections,
           },
         },
-      },
-      generalEvents: {
-        ingestKey: true,
+        generalEvents: {
+          ingestKey: true,
+        },
       },
     });
 
