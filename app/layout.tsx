@@ -68,40 +68,104 @@ const subscribeEnv = ({
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [
-    {
-      site: { footer, settings, header },
-    },
-  ] = await Promise.all([
-    basehub().query({
-      site: {
-        settings: {
-          theme: themeFragment,
-          logo: {
-            dark: {
-              url: true,
-              alt: true,
-              width: true,
-              height: true,
-              aspectRatio: true,
-              blurDataURL: true,
-            },
-            light: {
-              url: true,
-              alt: true,
-              width: true,
-              height: true,
-              aspectRatio: true,
-              blurDataURL: true,
-            },
-          },
-          showUseTemplate: true,
-        },
-        header: headerFragment,
-        footer: footerFragment,
+  let siteData;
+  
+  try {
+    const [
+      {
+        site: { footer, settings, header },
       },
-    }),
-  ])
+    ] = await Promise.all([
+      basehub().query({
+        site: {
+          settings: {
+            theme: themeFragment,
+            logo: {
+              dark: {
+                url: true,
+                alt: true,
+                width: true,
+                height: true,
+                aspectRatio: true,
+                blurDataURL: true,
+              },
+              light: {
+                url: true,
+                alt: true,
+                width: true,
+                height: true,
+                aspectRatio: true,
+                blurDataURL: true,
+              },
+            },
+            showUseTemplate: true,
+          },
+          header: headerFragment,
+          footer: footerFragment,
+        },
+      }),
+    ]);
+    
+    siteData = { footer, settings, header };
+  } catch (error) {
+    console.error("Error loading site data:", error);
+    // Use fallback data for local development
+    siteData = {
+      footer: {
+        newsletter: {
+          title: "Stay Updated",
+          description: "Get the latest updates and news.",
+          placeholder: "Enter your email",
+          buttonText: "Subscribe",
+        },
+        copyright: "© 2024 Marketing Website. All rights reserved.",
+        navbar: {
+          items: [
+            { _title: "Privacy", url: "/privacy" },
+            { _title: "Terms", url: "/terms" },
+          ],
+        },
+        socialLinks: [
+          { _title: "Twitter", icon: { url: "/placeholder.svg" }, url: "#" },
+          { _title: "LinkedIn", icon: { url: "/placeholder.svg" }, url: "#" },
+        ],
+      },
+      settings: {
+        theme: {
+          primaryColor: "#3B82F6",
+          secondaryColor: "#10B981",
+        },
+        logo: {
+          dark: {
+            url: "/placeholder-logo.svg",
+            alt: "Logo",
+            width: 120,
+            height: 40,
+          },
+          light: {
+            url: "/placeholder-logo.svg",
+            alt: "Logo",
+            width: 120,
+            height: 40,
+          },
+        },
+      },
+      header: {
+        navbar: {
+          items: [
+            { _title: "Home", href: "/", _id: "home" },
+            { _title: "Features", href: "/features", _id: "features" },
+            { _title: "Pricing", href: "/pricing", _id: "pricing" },
+          ],
+        },
+        rightCtas: [
+          { _id: "cta1", label: "Get Started", href: "/signup", type: "primary" },
+        ],
+      },
+    };
+  }
+
+  const { footer, settings, header } = siteData;
 
   let playgroundNotification = null
 
@@ -112,18 +176,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   })
 
   if (!isMainV0 && !allValid && process.env.NODE_ENV !== "production") {
-    const playgroundData = await basehub().query({
-      _sys: {
-        playgroundInfo: {
-          expiresAt: true,
-          editUrl: true,
-          claimUrl: true,
+    try {
+      const playgroundData = await basehub().query({
+        _sys: {
+          playgroundInfo: {
+            expiresAt: true,
+            editUrl: true,
+            claimUrl: true,
+          },
         },
-      },
-    })
+      })
 
-    if (playgroundData._sys.playgroundInfo) {
-      playgroundNotification = <PlaygroundSetupModal playgroundInfo={playgroundData._sys.playgroundInfo} envs={envs} />
+      if (playgroundData._sys.playgroundInfo) {
+        playgroundNotification = <PlaygroundSetupModal playgroundInfo={playgroundData._sys.playgroundInfo} envs={envs} />
+      }
+    } catch (error) {
+      console.error("Error loading playground data:", error);
+      // Show a simple notification about missing token
+      playgroundNotification = (
+        <div className="fixed top-4 right-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded z-50">
+          <strong>Demo Mode:</strong> Add BASEHUB_TOKEN to .env.local for full functionality
+        </div>
+      );
     }
   }
 
