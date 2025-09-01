@@ -22,21 +22,16 @@ export function DarkLightImage({
   withPlaceholder,
   ...props
 }: DarkLightImageProps) {
-  // Ensure consistent rendering between server and client
-  const hasDark = !!dark && !!dark.url;
-  const hasLight = !!light && !!light.url;
-  
-  // Always render both images to ensure consistent DOM structure
-  // Use CSS classes to control visibility instead of conditional rendering
+  // Use static keys and consistent props to prevent hydration mismatches
   return (
     <>
       <Image
-        key={`dark-${dark?._id || 'fallback'}`}
-        alt={dark?.alt ?? alt ?? ""}
+        key="dark-image"
+        alt={alt || "Dark theme image"}
         className={clsx("hidden dark:block", className)}
-        height={height ?? dark?.height || 100}
+        height={height || 100}
         src={dark?.url || "/placeholder.svg"}
-        width={width ?? dark?.width || 100}
+        width={width || 100}
         {...props}
         {...(withPlaceholder && dark?.blurDataURL
           ? {
@@ -44,17 +39,14 @@ export function DarkLightImage({
               blurDataURL: dark.blurDataURL,
             }
           : {})}
-        onError={() => {
-          if (dark?.url) console.warn(`Failed to load dark image: ${dark.url}`);
-        }}
       />
       <Image
-        key={`light-${light?._id || 'fallback'}`}
-        alt={light?.alt ?? alt ?? ""}
-        className={clsx(dark ? "dark:hidden" : "", className)}
-        height={height ?? light?.height || 100}
+        key="light-image"
+        alt={alt || "Light theme image"}
+        className={clsx("dark:hidden", className)}
+        height={height || 100}
         src={light?.url || "/placeholder.svg"}
-        width={width ?? light?.width || 100}
+        width={width || 100}
         {...props}
         {...(withPlaceholder && light?.blurDataURL
           ? {
@@ -62,15 +54,24 @@ export function DarkLightImage({
               blurDataURL: light.blurDataURL,
             }
           : {})}
-        onError={() => {
-          if (light?.url) console.warn(`Failed to load light image: ${light.url}`);
-        }}
       />
     </>
   );
 }
 
 export function DarkLightImageAutoscale(props: DarkLightImageProps) {
+  // Add safety check for aspectRatio
+  if (!props.light?.aspectRatio) {
+    return (
+      <DarkLightImage
+        priority
+        alt="logo"
+        className="w-auto max-w-[200px] object-contain h-10"
+        {...props}
+      />
+    );
+  }
+
   const [aspectRatioWidth, aspectRatioHeight] = props.light.aspectRatio.split("/").map(Number);
   const aspectRatio = (aspectRatioWidth ?? 0) / (aspectRatioHeight ?? 0);
   let logoStyle;
