@@ -27,6 +27,62 @@ import {
 } from "../../components/form-components";
 import "../../basehub.config";
 
+// Mock data for local development when Basehub is not available
+const mockData = {
+  site: {
+    pages: {
+      items: [
+        {
+          pathname: "/",
+          _id: "home",
+          _analyticsKey: "home-page",
+          sections: [],
+        },
+        {
+          pathname: "/pricing",
+          _id: "pricing",
+          _analyticsKey: "pricing-page",
+          sections: [],
+        },
+        {
+          pathname: "/features",
+          _id: "features",
+          _analyticsKey: "features-page",
+          sections: [],
+        },
+      ],
+    },
+    settings: {
+      metadata: {
+        defaultTitle: "Marketing Website",
+        titleTemplate: "%s | Marketing Website",
+        defaultDescription: "A modern marketing website built with Next.js and Basehub",
+      },
+      theme: {
+        primaryColor: "#3B82F6",
+        secondaryColor: "#10B981",
+      },
+      logo: {
+        light: {
+          url: "/placeholder-logo.svg",
+          alt: "Logo",
+          width: 120,
+          height: 40,
+        },
+        dark: {
+          url: "/placeholder-logo.svg",
+          alt: "Logo",
+          width: 120,
+          height: 40,
+        },
+      },
+    },
+    generalEvents: {
+      ingestKey: "demo-key",
+    },
+  },
+};
+
 export const dynamic = "force-static";
 export const revalidate = 30;
 
@@ -47,8 +103,10 @@ export const generateStaticParams = async () => {
     }));
   } catch (error) {
     console.error("Error in generateStaticParams:", error);
-    // Return empty array as fallback to prevent build failure
-    return [];
+    // Return mock data for local development
+    return mockData.site.pages.items.map((item) => ({
+      slug: item.pathname.split("/").filter(Boolean),
+    }));
   }
 };
 
@@ -93,9 +151,13 @@ export const generateMetadata = async ({
     };
   } catch (error) {
     console.error("Error in generateMetadata:", error);
-    // Return default metadata as fallback
+    // Return mock metadata as fallback
+    const params = await _params;
+    const path = params.slug ? `/${params.slug.join("/")}` : "/";
+    const mockPage = mockData.site.pages.items.find(p => p.pathname === path);
+    
     return {
-      title: "Marketing Website",
+      title: mockPage ? `${mockPage.pathname.slice(1) || 'Home'} | Marketing Website` : "Marketing Website",
       description: "A modern marketing website built with Next.js and Basehub",
     };
   }
@@ -229,14 +291,35 @@ export default async function DynamicPage({
     );
   } catch (error) {
     console.error("Error in DynamicPage:", error);
-    // Return a simple error page as fallback
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h1>
-          <p className="text-gray-600">Please try refreshing the page or check your connection.</p>
+    // Use mock data for local development
+    const params = await _params;
+    const path = params.slug ? `/${params.slug.join("/")}` : "/";
+    const mockPage = mockData.site.pages.items.find(p => p.pathname === path);
+    
+    if (!mockPage) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Page Not Found</h1>
+            <p className="text-gray-600">The page you're looking for doesn't exist.</p>
+          </div>
         </div>
-      </div>
+      );
+    }
+
+    return (
+      <>
+        <PageView ingestKey={mockData.site.generalEvents.ingestKey} />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Demo Mode</h1>
+            <p className="text-gray-600 mb-4">This is a demo page for: {mockPage.pathname}</p>
+            <p className="text-sm text-gray-500">
+              To see real content, add your BASEHUB_TOKEN to .env.local
+            </p>
+          </div>
+        </div>
+      </>
     );
   }
 }
