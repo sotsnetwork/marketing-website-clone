@@ -2,7 +2,6 @@
 
 import { type DarkLightImageFragment } from "../lib/basehub/fragments";
 import clsx from "clsx";
-import { BaseHubImage } from "basehub/next-image";
 import Image from "next/image";
 import type { ImageProps } from "next/image";
 
@@ -27,70 +26,46 @@ export function DarkLightImage({
   const hasDark = !!dark && !!dark.url;
   const hasLight = !!light && !!light.url;
   
-  // If no valid images, render a placeholder
-  if (!hasDark && !hasLight) {
-    return (
-      <div 
-        className={clsx("bg-gray-200 flex items-center justify-center", className)}
-        style={{ width: width || 100, height: height || 100 }}
-      >
-        <span className="text-gray-500 text-sm">Image</span>
-      </div>
-    );
-  }
-
-  // Simple fallback to regular Next.js Image if Basehub is not available
-  const ImageComponent = (props: any) => {
-    try {
-      return <BaseHubImage {...props} />;
-    } catch (error) {
-      console.warn("Basehub image failed, falling back to Next.js Image:", error);
-      return <Image {...props} />;
-    }
-  };
-
+  // Always render both images to ensure consistent DOM structure
+  // Use CSS classes to control visibility instead of conditional rendering
   return (
     <>
-      {hasDark && (
-        <ImageComponent
-          key={`dark-${dark._id || 'fallback'}`}
-          alt={dark.alt ?? alt ?? ""}
-          className={clsx("hidden dark:block", className)}
-          height={height ?? dark.height}
-          src={dark.url}
-          width={width ?? dark.width}
-          {...props}
-          {...(withPlaceholder && dark.blurDataURL
-            ? {
-                placeholder: "blur",
-                blurDataURL: dark.blurDataURL,
-              }
-            : {})}
-          onError={() => {
-            console.warn(`Failed to load image: ${dark.url}`);
-          }}
-        />
-      )}
-      {hasLight && (
-        <ImageComponent
-          key={`light-${light._id || 'fallback'}`}
-          alt={light.alt ?? alt ?? ""}
-          className={clsx(hasDark && "dark:hidden", className)}
-          height={height ?? light.height}
-          src={light.url}
-          width={width ?? light.width}
-          {...props}
-          {...(withPlaceholder && light.blurDataURL
-            ? {
-                placeholder: "blur",
-                blurDataURL: light.blurDataURL,
-              }
-            : {})}
-          onError={() => {
-            console.warn(`Failed to load image: ${light.url}`);
-          }}
-        />
-      )}
+      <Image
+        key={`dark-${dark?._id || 'fallback'}`}
+        alt={dark?.alt ?? alt ?? ""}
+        className={clsx("hidden dark:block", className)}
+        height={height ?? dark?.height || 100}
+        src={dark?.url || "/placeholder.svg"}
+        width={width ?? dark?.width || 100}
+        {...props}
+        {...(withPlaceholder && dark?.blurDataURL
+          ? {
+              placeholder: "blur",
+              blurDataURL: dark.blurDataURL,
+            }
+          : {})}
+        onError={() => {
+          if (dark?.url) console.warn(`Failed to load dark image: ${dark.url}`);
+        }}
+      />
+      <Image
+        key={`light-${light?._id || 'fallback'}`}
+        alt={light?.alt ?? alt ?? ""}
+        className={clsx(dark ? "dark:hidden" : "", className)}
+        height={height ?? light?.height || 100}
+        src={light?.url || "/placeholder.svg"}
+        width={width ?? light?.width || 100}
+        {...props}
+        {...(withPlaceholder && light?.blurDataURL
+          ? {
+              placeholder: "blur",
+              blurDataURL: light.blurDataURL,
+            }
+          : {})}
+        onError={() => {
+          if (light?.url) console.warn(`Failed to load light image: ${light.url}`);
+        }}
+      />
     </>
   );
 }
