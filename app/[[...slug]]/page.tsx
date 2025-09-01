@@ -70,11 +70,11 @@ export const generateMetadata = async ({
               },
             },
           },
-        },
-        items: {
-          metadataOverrides: {
-            title: true,
-            description: true,
+          items: {
+            metadataOverrides: {
+              title: true,
+              description: true,
+            },
           },
         },
       },
@@ -202,13 +202,12 @@ export default async function DynamicPage({
               },
             },
           },
-          first: 1,
-        },
-        items: {
-          _analyticsKey: true,
-          _id: true,
-          pathname: true,
-          sections: sectionsFragment.sections,
+          items: {
+            _analyticsKey: true,
+            _id: true,
+            pathname: true,
+            sections: sectionsFragment.sections,
+          },
         },
       },
       generalEvents: {
